@@ -1,9 +1,9 @@
 package wikipedia
 
+import org.apache.commons.codec.language.bm.Lang
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
-
 import org.apache.spark.rdd.RDD
 
 case class WikipediaArticle(title: String, text: String) {
@@ -44,7 +44,8 @@ object WikipediaRanking {
    *   Note: this operation is long-running. It can potentially run for
    *   several seconds.
    */
-  def rankLangs(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] = ???
+  def rankLangs(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] =
+    langs.map( lang=> (lang, occurrencesOfLang(lang, rdd))).sortBy(- _._2)
 
   /* Compute an inverted index of the set of articles, mapping each language
    * to the Wikipedia pages in which it occurs.
