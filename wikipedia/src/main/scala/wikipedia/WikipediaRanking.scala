@@ -1,5 +1,7 @@
 package wikipedia
 
+import java.util
+
 import org.apache.commons.codec.language.bm.Lang
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
@@ -32,7 +34,9 @@ object WikipediaRanking {
     */
   def occurrencesOfLang(lang: String, rdd: RDD[WikipediaArticle]): Int = {
     def seqOpFun (a:WikipediaArticle):Int = if (a.mentionsLanguage(lang)) 1 else 0
+
     rdd.aggregate(0)(_ + seqOpFun(_) , _ + _)
+
   }
 
 
@@ -45,12 +49,19 @@ object WikipediaRanking {
    *   several seconds.
    */
   def rankLangs(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] =
-    langs.map( lang=> (lang, occurrencesOfLang(lang, rdd))).sortBy(- _._2)
+    langs.map( lang => (lang, occurrencesOfLang(lang, rdd))).filter(_._2>0).sortBy(- _._2)
 
   /* Compute an inverted index of the set of articles, mapping each language
    * to the Wikipedia pages in which it occurs.
    */
-  def makeIndex(langs: List[String], rdd: RDD[WikipediaArticle]): RDD[(String, Iterable[WikipediaArticle])] = ???
+  def makeIndex(langs: List[String], rdd: RDD[WikipediaArticle]): RDD[(String, Iterable[WikipediaArticle])] = {
+
+    def getArticles(lang: String, rdd: RDD[WikipediaArticle]) =
+      rdd.map(article => ( article, article.mentionsLanguage(lang))).filter(_._2).map(_._1)
+
+      sc.parallelize( langs.map(lang =>  (lang, getArticles(lang, rdd).collect().toList ) ))
+
+  }
 
   /* (2) Compute the language ranking again, but now using the inverted index. Can you notice
    *     a performance improvement?
@@ -58,7 +69,10 @@ object WikipediaRanking {
    *   Note: this operation is long-running. It can potentially run for
    *   several seconds.
    */
-  def rankLangsUsingIndex(index: RDD[(String, Iterable[WikipediaArticle])]): List[(String, Int)] = ???
+  def rankLangsUsingIndex(index: RDD[(String, Iterable[WikipediaArticle])]): List[(String, Int)] = {
+    index.map(p => (p._1, p._2.size)).collect.toList
+
+  }
 
   /* (3) Use `reduceByKey` so that the computation of the index and the ranking are combined.
    *     Can you notice an improvement in performance compared to measuring *both* the computation of the index
@@ -68,6 +82,7 @@ object WikipediaRanking {
    *   several seconds.
    */
   def rankLangsReduceByKey(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] = ???
+
 
   def main(args: Array[String]) {
 
