@@ -33,11 +33,9 @@ object WikipediaRanking {
     * Hint2: consider using method `mentionsLanguage` on `WikipediaArticle`
     */
   def occurrencesOfLang(lang: String, rdd: RDD[WikipediaArticle]): Int = {
-    def seqOpFun (a:WikipediaArticle):Int = if (a.mentionsLanguage(lang)) 1 else 0
-
-    rdd.aggregate(0)(_ + seqOpFun(_) , _ + _)
-
+    rdd.aggregate(0)(_ + seqOpFun(_, lang), _ + _)
   }
+  def seqOpFun (a:WikipediaArticle, lang:String):Int = if (a.mentionsLanguage(lang)) 1 else 0
 
 
   /* (1) Use `occurrencesOfLang` to compute the ranking of the languages
@@ -81,8 +79,12 @@ object WikipediaRanking {
    *   Note: this operation is long-running. It can potentially run for
    *   several seconds.
    */
-  def rankLangsReduceByKey(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] = ???
+  def rankLangsReduceByKey(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] = {
+    rdd.flatMap( article =>
+      langs.map( lang => (lang, seqOpFun( article, lang ) )))
+      .reduceByKey( _ + _ ).collect().sortBy(- _._2).toList
 
+  }
 
   def main(args: Array[String]) {
 
