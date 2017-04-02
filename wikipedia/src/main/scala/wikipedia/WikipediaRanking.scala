@@ -26,16 +26,16 @@ object WikipediaRanking {
   val sc: SparkContext = new SparkContext(conf)
   // Hint: use a combination of `sc.textFile`, `WikipediaData.filePath` and `WikipediaData.parse`
   val wikiRdd: RDD[WikipediaArticle] =
-    sc.textFile(WikipediaData.filePath).map(p => WikipediaData.parse(p)).cache()
+    sc.textFile(WikipediaData.filePath).map(p => WikipediaData.parse(p))
 
   /** Returns the number of articles on which the language `lang` occurs.
     * Hint1: consider using method `aggregate` on RDD[T].
     * Hint2: consider using method `mentionsLanguage` on `WikipediaArticle`
     */
   def occurrencesOfLang(lang: String, rdd: RDD[WikipediaArticle]): Int = {
+    def seqOpFun (a:WikipediaArticle, lang:String):Int = if (a.mentionsLanguage(lang)) 1 else 0
     rdd.aggregate(0)(_ + seqOpFun(_, lang), _ + _)
   }
-  def seqOpFun (a:WikipediaArticle, lang:String):Int = if (a.mentionsLanguage(lang)) 1 else 0
 
 
   /* (1) Use `occurrencesOfLang` to compute the ranking of the languages
@@ -46,18 +46,18 @@ object WikipediaRanking {
    *   Note: this operation is long-running. It can potentially run for
    *   several seconds.
    */
-  def rankLangs(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] =
-    langs.map( lang => (lang, occurrencesOfLang(lang, rdd))).filter(_._2>0).sortBy(- _._2)
-
+  def rankLangs(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] = {
+    rdd.cache()
+    langs.map(lang => (lang, occurrencesOfLang(lang, rdd))).filter(_._2 > 0).sortBy(-_._2)
+  }
   /* Compute an inverted index of the set of articles, mapping each language
    * to the Wikipedia pages in which it occurs.
    */
   def makeIndex(langs: List[String], rdd: RDD[WikipediaArticle]): RDD[(String, Iterable[WikipediaArticle])] = {
-
-    def getArticles(lang: String, rdd: RDD[WikipediaArticle]) =
-      rdd.map(article => ( article, article.mentionsLanguage(lang))).filter(_._2).map(_._1)
-
-      sc.parallelize( langs.map(lang =>  (lang, getArticles(lang, rdd).collect().toList ) ))
+    rdd.flatMap(article =>
+      langs.filter( article.mentionsLanguage )
+      .map(lang => (lang, article)))
+      .groupByKey()
 
   }
 
@@ -81,8 +81,10 @@ object WikipediaRanking {
    */
   def rankLangsReduceByKey(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] = {
     rdd.flatMap( article =>
-      langs.map( lang => (lang, seqOpFun( article, lang ) )))
-      .reduceByKey( _ + _ ).collect().sortBy(- _._2).toList
+      langs.filter( article.mentionsLanguage))
+      .map( article =>  (article, 1 ) )
+      .reduceByKey( _ + _ )
+      .collect().sortBy(- _._2).toList
 
   }
 
