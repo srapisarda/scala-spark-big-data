@@ -78,27 +78,18 @@ class StackOverflow extends Serializable {
 
   /** Group the questions and answers together */
   def groupedPostings(postings: RDD[Posting]): RDD[(Int, Iterable[(Posting, Posting)])] = {
-    ???
+    val questions = postings.filter(p => p.postingType ==1).map( p => (p.id, p) )
+    val answers = postings.filter( p => p.postingType==2 && p.parentId.isDefined ).map( p => (p.parentId.get, p))
+    questions.join(answers).groupByKey()
+
   }
 
 
   /** Compute the maximum score for each posting */
-  def scoredPostings(grouped: RDD[(Int, Iterable[(Posting, Posting)])]): RDD[(Posting, Int)] = {
-
-    def answerHighScore(as: Array[Posting]): Int = {
-      var highScore = 0
-          var i = 0
-          while (i < as.length) {
-            val score = as(i).score
-                if (score > highScore)
-                  highScore = score
-                  i += 1
-          }
-      highScore
-    }
-
-    ???
-  }
+  def scoredPostings(grouped: RDD[(Int, Iterable[(Posting, Posting)])]): RDD[(Posting, Int)] =
+    grouped.flatMap(_._2)
+      .groupByKey()
+      .mapValues( _.map(_.score).max )
 
 
   /** Compute the vectors for the kmeans */
