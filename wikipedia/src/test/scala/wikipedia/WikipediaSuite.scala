@@ -17,6 +17,7 @@ class WikipediaSuite extends FunSuite with BeforeAndAfterAll {
       true
     } catch {
       case ex: Throwable =>
+
         println(ex.getMessage)
         ex.printStackTrace()
         false
