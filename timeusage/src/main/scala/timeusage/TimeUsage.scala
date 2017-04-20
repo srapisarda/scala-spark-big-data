@@ -71,7 +71,7 @@ object TimeUsage {
     * @param line Raw fields
     */
   def row(line: List[String]): Row =
-    ???
+    Row.fromSeq(line)
 
   /** @return The initial data frame columns partitioned in three groups: primary needs (sleeping, eating, etc.),
     *         work and other (leisure activities)
@@ -89,7 +89,20 @@ object TimeUsage {
     *    “t10”, “t12”, “t13”, “t14”, “t15”, “t16” and “t18” (those which are not part of the previous groups only).
     */
   def classifiedColumns(columnNames: List[String]): (List[Column], List[Column], List[Column]) = {
-    ???
+
+    def startsWith(  v:String , l:List[String]  ): Boolean = l  match   {
+      case List() =>   false;
+      case x::xs => if ( v.startsWith( x ) ) true else  startsWith(v, xs)
+    }
+
+    val primaryNeeds  =  List("t01", "t03", "t11", "t1801" , "t1803" )
+    val workingActivities = List("t05", "t1805")
+    val otherActivities = List( "t10", "t12", "t13", "t14", "t15", "t16", "t18")
+
+    ( columnNames.filter( startsWith (_, primaryNeeds) ).map( p =>  col( p)),
+      columnNames.filter( startsWith (_, workingActivities) ).map( p =>  col( p)) ,
+      columnNames.filter( startsWith (_, otherActivities) ).map( p =>  col( p)) )
+
   }
 
   /** @return a projection of the initial DataFrame such that all columns containing hours spent on primary needs

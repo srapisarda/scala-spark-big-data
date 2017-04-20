@@ -21,8 +21,17 @@ class TimeUsageSuite extends FunSuite with BeforeAndAfterAll {
     val headerColumns = rdd.first().split(",").to[List]
     val dfSchema: StructType = TimeUsage.dfSchema(headerColumns)
 
-    assert( dfSchema != null )
-    assert( dfSchema.size ==  headerColumns.length )
+    assert(dfSchema != null)
+    assert(dfSchema.size == headerColumns.length)
   }
+
+  test("'classifiedColumns' should return a defined triple of df Columns ") {
+    val headerColumns = rdd.first().split(",").to[List]
+    val (t1, t2, t3) = TimeUsage.classifiedColumns(headerColumns)
+    assert(t1.nonEmpty)
+    assert(t2.nonEmpty)
+    assert(t3.nonEmpty)
+  }
+
 
 }
