@@ -99,9 +99,9 @@ object TimeUsage {
     val workingActivities = List("t05", "t1805")
     val otherActivities = List( "t10", "t12", "t13", "t14", "t15", "t16", "t18")
 
-    ( columnNames.filter( startsWith (_, primaryNeeds) ).map( p =>  col( p)),
-      columnNames.filter( startsWith (_, workingActivities) ).map( p =>  col( p)) ,
-      columnNames.filter( startsWith (_, otherActivities) ).map( p =>  col( p)) )
+    ( columnNames.filter( startsWith (_, primaryNeeds) ).map(col),
+      columnNames.filter( startsWith (_, workingActivities) ).map(col),
+      columnNames.filter( startsWith (_, otherActivities) ).map(col))
 
   }
 
