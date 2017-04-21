@@ -39,4 +39,13 @@ class TimeUsageSuite extends FunSuite with BeforeAndAfterAll {
     assert(summaryDf != null)
   }
 
+  test("'timeUsageGrouped' should return a defined dataset"){
+    val (columns, initDf) = TimeUsage.read("/timeusage/atussum.csv")
+    val (primaryNeedsColumns, workColumns, otherColumns) = TimeUsage.classifiedColumns(columns)
+    val summaryDf: DataFrame = TimeUsage.timeUsageSummary(primaryNeedsColumns, workColumns, otherColumns, initDf)
+    val dataSet =  TimeUsage.timeUsageGrouped(summaryDf)
+    assert( dataSet != null  )
+
+  }
+
 }
