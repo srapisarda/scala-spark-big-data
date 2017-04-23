@@ -92,7 +92,7 @@ object TimeUsage {
     *    “t10”, “t12”, “t13”, “t14”, “t15”, “t16” and “t18” (those which are not part of the previous groups only).
     */
   def classifiedColumns(columnNames: List[String]): (List[Column], List[Column], List[Column]) = {
-
+    @tailrec
     def classifiedColumnsH( columnNames: List[String], acc:(List[Column], List[Column], List[Column]) ) : (List[Column], List[Column], List[Column]) = columnNames  match {
       case List() => (acc._1.reverse, acc._2.reverse, acc._3.reverse)
       case x::xs =>
@@ -101,7 +101,7 @@ object TimeUsage {
         else if (x.startsWith("t05") || x.startsWith("t1805") )
           classifiedColumnsH(xs, (acc._1, col(x)::acc._2, acc._3))
         else
-          classifiedColumnsH(xs,  (acc._1, acc._2,col(x)::acc._3))
+          classifiedColumnsH(xs,  (acc._1, acc._2, col(x)::acc._3))
 
     }
 
